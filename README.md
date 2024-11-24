@@ -107,20 +107,32 @@ games:
 
 ```
 ## Scripts
+
 Edit start_game.bat to your folder structure.
+
 Move and edit upload_game.bat to your SteamCMD folder.
 
 ## How to Use It
 
 - **Start a Game Server**: `!start valheim`
+
+![alt text]({5ABBC619-F936-42A2-8A6F-7BB530C78FE2}.png)
     
 - **Stop a Game Server**: `!stop valheim`
+
+![alt text]({00EB51CF-3A76-4CAC-B667-76D82621E573}.png)
     
 - **Restart a Game Server**: `!restart valheim`
     
 - **Update a Game Server**: `!update valheim`
     
+![alt text]({085DC6FA-1EE1-4383-B685-D099C6EF9AAE}.png)    
+
 - **Get Server Status**: `!status`
+
+![alt text](image.png)
+
+- **Show commands**: `!help`
     
 
 Right now, these are just basic text commands in Discord. In the future, I might add some additional features like slash commands or buttons to make it even easier.
