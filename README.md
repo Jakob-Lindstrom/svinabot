@@ -26,6 +26,8 @@ This bot is something I put together to make managing my local Windows game serv
 
 - Python 3.8 or higher.
 
+- Windows 10 or higher
+
 - A Discord bot token. You can get one from the [Discord Developer Portal](https://discord.com/developers/applications).
 
 - SteamCMD with some dedicated server games.
