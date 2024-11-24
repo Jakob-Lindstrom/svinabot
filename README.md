@@ -11,15 +11,6 @@ This bot is something I put together to make managing my local Windows game serv
 - **Remote Access**: Sometimes I’m not around, but my friends want to play. This bot lets them start, stop, or update game servers directly through Discord.
 
 
-## Features
-
-- **Start/Stop Game Servers**: Only one game server can run at a time, and my friends can easily start or stop the servers whenever they want.
-
-- **Update Game Servers**: Keeping game servers updated is a pain, but the bot has commands to update them remotely.
-
-- **Show Current IP**: The bot can display the server's current IP address so my friends always know where to connect.
-
-
 ## Getting Started
 
 ### Prerequisites
