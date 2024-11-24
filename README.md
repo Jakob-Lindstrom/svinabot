@@ -39,7 +39,7 @@ cd svinabot
 pip install -r requirements.txt
 ```
 
-3. **Configure the Bot** Create your `config.yaml` based on the provided `config.example.yaml`. This is where you’ll add your server settings (like start and stop commands).
+3. **Configure the Bot** Create your `config.yaml` based on the provided `config.example.yaml`. This is where you’ll add your server settings (folder strucutre).
 
 4. Invite your bot to your Discord server
 
