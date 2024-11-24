@@ -1,0 +1,44 @@
+# config.yaml
+
+
+discord:
+  token: 'Discord-Token'
+
+password: 'PasswordThatYouSetOnYourGames'
+
+games:
+  valheim:
+    start_command: "C:\\Users\\UserFolder\\svinabot\\scripts\\start_valheim.bat"
+    update_command: "C:\\Users\\UserFolder\\SteamCMD\\update_valheim.bat"
+    process_name: "valheim_server.exe"
+    display_name: "Valheim"
+    update_log: "C:\\Users\\UserFolder\\svinabot\\logs\\update_valheim.log"
+    startup_time: 35
+    shutdown_time: 5
+
+  satisfactory:
+    start_command: "C:\\Users\\UserFolder\\svinabot\\scripts\\start_satisfactory.bat"
+    update_command: "C:\\Users\\UserFolder\\SteamCMD\\update_satisfactory.bat"
+    process_name: "FactoryServer-Win64-Shipping-Cmd.exe"
+    display_name: "Satisfactory"
+    update_log: "C:\\Users\\UserFolder\\svinabot\\logs\\update_satisfactory.log"
+    startup_time: 18
+    shutdown_time: 5
+    
+  enshrouded:
+    start_command: "C:\\Users\\UserFolder\\svinabot\\scripts\\start_enshrouded.bat"
+    update_command: "C:\\Users\\UserFolder\\SteamCMD\\update_enshrouded.bat"
+    process_name: "enshrouded_server.exe"
+    display_name: "Enshrouded"
+    update_log: "C:\\Users\\UserFolder\\svinabot\\logs\\update_enshrouded.log"
+    startup_time: 5  
+    shutdown_time: 5
+
+  sons:
+    start_command: "C:\\Users\\UserFolder\\svinabot\\scripts\\start_sons_of_the_forest.bat"
+    update_command: "C:\\Users\\UserFolder\\SteamCMD\\update_sons_of_the_forest.bat"
+    process_name: "SonsOfTheForestDS.exe"
+    display_name: "Sons of the Forest"
+    update_log: "C:\\Users\\UserFolder\\svinabot\\logs\\update_sons_of_the_forest.log"
+    startup_time: 68 
+    shutdown_time: 5
