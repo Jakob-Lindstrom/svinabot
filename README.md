@@ -1,6 +1,6 @@
 # Game Server Management Bot
 
-This bot is something I put together to make managing my local game server a lot easier, especially since my setup isn't exactly high-end. The main idea is to let me and my friends control game servers from our Discord server without needing to help them start/stop/update games.
+This bot is something I put together to make managing my local Windows game server a lot easier, especially since my setup isn't exactly high-end. The main idea is to let me and my friends control game servers from our Discord server without needing to help them start/stop/update games.
 
 ## Why I Built This Bot
 
