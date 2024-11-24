@@ -48,6 +48,33 @@ class GameCommands(commands.Cog):
             win32gui.EnumWindows(_window_enum_callback, None)
             return hwnds[0] if hwnds else None
 
+# run bat files
+
+    async def run_bat_file(self, command):
+        """Helper function to run .bat files without capturing output."""
+        try:
+            # Normalize the command path for consistent usage
+            command = os.path.normpath(command)
+            working_dir = os.path.dirname(command)
+
+            # Log the resolved path for debugging
+            logging.info(f"Attempting to run: {command}")
+
+            # Run the batch file asynchronously without waiting for it to finish
+            process = await asyncio.create_subprocess_exec(
+                command,
+                cwd=working_dir,
+                stdout=asyncio.subprocess.DEVNULL,
+                stderr=asyncio.subprocess.DEVNULL
+            )
+
+            logging.info(f"Successfully started {command} with PID: {process.pid}")
+            return 0, "", ""
+        except Exception as e:
+            logging.error(f"Error running command {command}: {e}")
+            return -1, "", str(e)
+
+
     async def run_bat_file_and_capture_output(self, command, log_file=None):
         """Helper function to run .bat files and capture output."""
         try:
@@ -63,21 +90,18 @@ class GameCommands(commands.Cog):
                 # Ensure log directory exists
                 os.makedirs(os.path.dirname(log_file), exist_ok=True)
                 log_file_handle = open(log_file, 'w', encoding='utf-8')
-                process = subprocess.Popen(
+                process = await asyncio.create_subprocess_exec(
                     command,
                     cwd=working_dir,
-                    shell=True,
                     stdout=log_file_handle,
-                    stderr=subprocess.STDOUT
+                    stderr=asyncio.subprocess.STDOUT
                 )
             else:
-                process = subprocess.Popen(
+                process = await asyncio.create_subprocess_exec(
                     command,
                     cwd=working_dir,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
+                    stdout=asyncio.subprocess.PIPE,
+                    stderr=asyncio.subprocess.PIPE
                 )
 
             logging.info(f"Started process PID: {process.pid}")
@@ -87,34 +111,8 @@ class GameCommands(commands.Cog):
         except Exception as e:
             logging.error(f"Error running command {command}: {e}")
             return -1, "", str(e), None
-
-
-
-    async def run_bat_file(self, command):
-        """Helper function to run .bat files without capturing output."""
-        try:
-            # Normalize the command path for consistent usage
-            command = os.path.normpath(command)
-            working_dir = os.path.dirname(command)
-
-            # Log the resolved path for debugging
-            logging.info(f"Attempting to run: {command}")
-
-            # Run the batch file without waiting for it to finish
-            subprocess.Popen(
-                command,
-                cwd=working_dir,
-                shell=True
-            )
-
-            logging.info(f"Successfully started {command}")
-            return 0, "", ""
-        except Exception as e:
-            logging.error(f"Error running command {command}: {e}")
-            return -1, "", str(e)
             
-
-
+            
 # START COMMAND  
 
     @commands.command()
