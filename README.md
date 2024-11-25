@@ -110,7 +110,7 @@ games:
 
 Edit start_game.bat to your folder structure.
 
-Move and edit upload_game.bat to your SteamCMD folder.
+Move and edit update_game.bat to your SteamCMD folder.
 
 ## How to Use It
 
