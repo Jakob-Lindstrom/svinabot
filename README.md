@@ -116,21 +116,21 @@ Move and edit upload_game.bat to your SteamCMD folder.
 
 - **Start a Game Server**: `!start valheim`
 
-![alt text](.\images\start.png)
+![alt text](./images/start.png)
     
 - **Stop a Game Server**: `!stop valheim`
 
-![alt text](.\images\stop.png)
+![alt text](./images/stop.png)
     
 - **Restart a Game Server**: `!restart valheim`
     
 - **Update a Game Server**: `!update valheim`
     
-![alt text](.\images\update.png)    
+![alt text](./images/update.png)    
 
 - **Get Server Status**: `!status`
 
-![alt text](.\images\status.png)
+![alt text](./images/status.png)
 
 - **Show commands**: `!help`
     
