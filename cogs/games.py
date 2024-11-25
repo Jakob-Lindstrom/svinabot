@@ -16,6 +16,7 @@ class GameCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.games = {}
+        self.command_locks = {}
         # Initialize GameServer instances for each game
         for game_key, game_config in config['games'].items():
             required_keys = ['display_name', 'start_command', 'stop_command', 'process_name', 'startup_time']
@@ -37,7 +38,7 @@ class GameCommands(commands.Cog):
             logging.info(f"Initialized GameServer for '{game_key}' with startup_time={game_config.get('startup_time', 30)} seconds.")
             
     def _find_window_by_title_substring(self, substring):
-            """Find the window handle for a window whose title contains the given substring."""
+            """Find the window handle for a window whose title contains the given string."""
             hwnds = []
 
             def _window_enum_callback(hwnd, _):
@@ -47,9 +48,24 @@ class GameCommands(commands.Cog):
 
             win32gui.EnumWindows(_window_enum_callback, None)
             return hwnds[0] if hwnds else None
+            
 
-# run bat files
+#################
+# Command LOCK  #
+#################
+    def set_command_lock(self, game_name):
+        self.command_locks[game_name] = True
 
+    def clear_command_lock(self, game_name):
+        self.command_locks[game_name] = False
+
+    def is_command_locked(self, game_name):
+        return self.command_locks.get(game_name, False)
+        
+
+#################
+#   BAT STUFF   #
+#################
     async def run_bat_file(self, command):
         """Helper function to run .bat files without capturing output."""
         try:
@@ -112,28 +128,41 @@ class GameCommands(commands.Cog):
             logging.error(f"Error running command {command}: {e}")
             return -1, "", str(e), None
             
-            
-# START COMMAND  
 
+#################
+# START COMMAND # 
+#################
     @commands.command()
     async def start(self, ctx, game_name: str):
         """Starts the specified game server."""
         game = self.games.get(game_name.lower())
-        if game and game.start_command:
-            # Check if any other server is running
-            running_games = [g for g in self.games.values() if g.is_running()]
-            if running_games:
-                running_game_names = ", ".join([g.display_name for g in running_games])
-                await ctx.send(
-                    f"❌ Cannot start {game.display_name} server because the following server(s) are already running: {running_game_names}. "
-                    f"Please stop them before starting a new server."
-                )
-                return
+        if not game or not game.start_command:
+            await ctx.send(f"❌ Game '{game_name}' not found or start command not configured.")
+            return
 
-            if game.is_running():
-                await ctx.send(f"✅ {game.display_name} server is already running.")
-                return
+        # Check if a command is already in progress for this game
+        if self.is_command_locked(game.name):
+            await ctx.send(f"❌ {game.display_name} server is already in progress. Please wait until it finishes.")
+            return
 
+        # Check if any other server is running
+        running_games = [g for g in self.games.values() if g.is_running()]
+        if running_games:
+            running_game_names = ", ".join([g.display_name for g in running_games])
+            await ctx.send(
+                f"❌ Cannot start {game.display_name} server because the following server(s) are already running: {running_game_names}. "
+                f"Please stop them before starting a new server."
+            )
+            return
+
+        if game.is_running():
+            await ctx.send(f"✅ {game.display_name} server is already running.")
+            return
+
+        # Set command lock
+        self.set_command_lock(game.name)
+
+        try:
             # Send initial message
             message = await ctx.send(f"Starting {game.display_name} server...")
 
@@ -159,13 +188,14 @@ class GameCommands(commands.Cog):
                 await message.edit(
                     content=f"❌ Failed to start {game.display_name} server.\nError: {stderr}\nPlease check the logs for details."
                 )
-        else:
-            await ctx.send(f"❌ Game '{game_name}' not found or start command not configured.")
+        finally:
+            # Clear command lock after execution
+            self.clear_command_lock(game.name)
             
 
-
-# STOP COMMAND
-
+################
+# STOP COMMAND #
+################
     @commands.command()
     async def stop(self, ctx, game_name: str):
         """Stops the specified game server."""
@@ -174,9 +204,17 @@ class GameCommands(commands.Cog):
             await ctx.send(f"❌ Game '{game_name}' not found.")
             return
 
+        # Check if a command is already in progress for this game
+        if self.is_command_locked(game.name):
+            await ctx.send(f"❌ {game.display_name} server is already in progress. Please wait until it finishes.")
+            return
+
         if not game.is_running():
             await ctx.send(f"❌ {game.display_name} server is not running.")
             return
+
+        # Set command lock
+        self.set_command_lock(game.name)
 
         # Send initial message
         message = await ctx.send(f"Stopping {game.display_name} server...\nProgress: 0%\n[⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜]")
@@ -218,9 +256,14 @@ class GameCommands(commands.Cog):
 
         except Exception as e:
             await message.edit(content=f"❌ Error stopping {game.display_name} server: {e}")
+        finally:
+            # Clear command lock after execution
+            self.clear_command_lock(game.name)
 
-# RESTART COMMAND
 
+###################
+# RESTART COMMAND #
+###################
     @commands.command()
     async def restart(self, ctx, game_name: str):
         """Restarts the specified game server."""
@@ -229,83 +272,94 @@ class GameCommands(commands.Cog):
             await ctx.send(f"❌ Game '{game_name}' not found.")
             return
 
-        # Check if the game server is running
-        if not game.is_running():
-            await ctx.send(f"❌ {game.display_name} server is not running, so it cannot be restarted.")
+        # Check if a command is already in progress for this game
+        if self.is_command_locked(game.name):
+            await ctx.send(f"❌ {game.display_name} server is already in progress. Please wait until it finishes.")
             return
 
-        # Send initial message
-        message = await ctx.send(f"Restarting {game.display_name} server...\nStage: Shutting down...")
+        # Set command lock
+        self.set_command_lock(game.name)
 
-        # Stop the server gracefully with progress bar
         try:
-            # Find the window using part of its title (process_name as substring)
-            hwnd = self._find_window_by_title_substring(game.process_name)
-
-            if hwnd:
-                # Send WM_CLOSE to gracefully close the window
-                win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
-
-                # Set number of progress steps to 10
-                shutdown_steps = 10
-                sleep_per_step = game.shutdown_time / shutdown_steps
-
-                # Wait for graceful shutdown with progress update
-                for i in range(shutdown_steps):
-                    progress_bar = '🟥' * (i + 1) + '⬜' * (shutdown_steps - i - 1)
-                    progress_percent = int(((i + 1) / shutdown_steps) * 100)
-                    await message.edit(content=f"Shutting down {game.display_name} server...\nProgress: {progress_percent}%\n[{progress_bar}]")
-                    await asyncio.sleep(sleep_per_step)
-
-                # Check if the process is still running
-                if game.is_running():
-                    await ctx.send(f"⚠️ {game.display_name} server did not shut down gracefully in {game.shutdown_time} seconds. Forcing shutdown...")
-
-                    # Use psutil to forcefully terminate the process
-                    for proc in psutil.process_iter(['pid', 'name']):
-                        if proc.info['name'].lower() == game.process_name.lower():
-                            proc.kill()  # Force kill the process
-                            await ctx.send(f"❌ {game.display_name} server was forcefully shut down.")
-                            break
-                else:
-                    await message.edit(content=f"✅ {game.display_name} server shut down successfully!")
-
-            else:
-                await ctx.send(f"❌ Could not find window for {game.display_name}. Please ensure the process is running and has a visible window.")
+            # Check if the game server is running
+            if not game.is_running():
+                await ctx.send(f"❌ {game.display_name} server is not running, so it cannot be restarted.")
                 return
 
-        except Exception as e:
-            await message.edit(content=f"❌ Error stopping {game.display_name} server: {e}")
-            return
+            # Send initial message
+            message = await ctx.send(f"Restarting {game.display_name} server...\nStage: Shutting down...")
 
-        # Start the server with progress bar
-        await message.edit(content=f"Restarting {game.display_name} server...\nStage: Starting up...")
+            # Stop the server gracefully with progress bar
+            try:
+                # Find the window using part of its title (process_name as substring)
+                hwnd = self._find_window_by_title_substring(game.process_name)
 
-        startup_steps = 10
-        sleep_per_step = game.startup_time / startup_steps
+                if hwnd:
+                    # Send WM_CLOSE to gracefully close the window
+                    win32gui.PostMessage(hwnd, win32con.WM_CLOSE, 0, 0)
 
-        # Run the startup command asynchronously
-        returncode, stdout, stderr = await self.run_bat_file(game.start_command)
+                    # Set number of progress steps to 10
+                    shutdown_steps = 10
+                    sleep_per_step = game.shutdown_time / shutdown_steps
 
-        # Simulate startup progress
-        for i in range(startup_steps):
-            progress_bar = '🟩' * (i + 1) + '⬜' * (startup_steps - i - 1)
-            progress_percent = int(((i + 1) / startup_steps) * 100)
-            await message.edit(content=f"Starting {game.display_name} server...\nProgress: {progress_percent}%\n[{progress_bar}]")
-            await asyncio.sleep(sleep_per_step)
+                    # Wait for graceful shutdown with progress update
+                    for i in range(shutdown_steps):
+                        progress_bar = '🟥' * (i + 1) + '⬜' * (shutdown_steps - i - 1)
+                        progress_percent = int(((i + 1) / shutdown_steps) * 100)
+                        await message.edit(content=f"Shutting down {game.display_name} server...\nProgress: {progress_percent}%\n[{progress_bar}]")
+                        await asyncio.sleep(sleep_per_step)
 
-        # Check if the server started successfully
-        if game.is_running():
-            await message.edit(content=f"✅ {game.display_name} server restarted successfully!")
-        else:
-            await message.edit(content=f"❌ Failed to start {game.display_name} server after shutdown.")
+                    # Check if the process is still running
+                    if game.is_running():
+                        await ctx.send(f"⚠️ {game.display_name} server did not shut down gracefully in {game.shutdown_time} seconds. Forcing shutdown...")
+
+                        # Use psutil to forcefully terminate the process
+                        for proc in psutil.process_iter(['pid', 'name']):
+                            if proc.info['name'].lower() == game.process_name.lower():
+                                proc.kill()  # Force kill the process
+                                await ctx.send(f"❌ {game.display_name} server was forcefully shut down.")
+                                break
+                    else:
+                        await message.edit(content=f"✅ {game.display_name} server shut down successfully!")
+
+                else:
+                    await ctx.send(f"❌ Could not find window for {game.display_name}. Please ensure the process is running and has a visible window.")
+                    return
+
+            except Exception as e:
+                await message.edit(content=f"❌ Error stopping {game.display_name} server: {e}")
+                return
+
+            # Start the server with progress bar
+            await message.edit(content=f"Restarting {game.display_name} server...\nStage: Starting up...")
+
+            startup_steps = 10
+            sleep_per_step = game.startup_time / startup_steps
+
+            # Run the startup command asynchronously
+            returncode, stdout, stderr = await self.run_bat_file(game.start_command)
+
+            # Simulate startup progress
+            for i in range(startup_steps):
+                progress_bar = '🟩' * (i + 1) + '⬜' * (startup_steps - i - 1)
+                progress_percent = int(((i + 1) / startup_steps) * 100)
+                await message.edit(content=f"Starting {game.display_name} server...\nProgress: {progress_percent}%\n[{progress_bar}]")
+                await asyncio.sleep(sleep_per_step)
+
+            # Check if the server started successfully
+            if game.is_running():
+                await message.edit(content=f"✅ {game.display_name} server restarted successfully!")
+            else:
+                await message.edit(content=f"❌ Failed to start {game.display_name} server after shutdown.")
+
+        finally:
+            # Clear command lock after execution
+            self.clear_command_lock(game.name)
 
 
-
-
-
-# STATUS COMMAND
-
+##################
+# STATUS COMMAND #
+##################
     @commands.command()
     async def status(self, ctx):
         """Displays the status of all game servers."""
@@ -333,8 +387,9 @@ class GameCommands(commands.Cog):
         await ctx.send(embed=embed)
 
 
-# UPDATE COMMAND
-
+##################
+# UPDATE COMMAND #
+##################
     @commands.command()
     async def update(self, ctx, game_name: str):
         """Updates the specified game server."""
@@ -457,9 +512,6 @@ class GameCommands(commands.Cog):
 
         else:
             await ctx.send(f"❌ Game '{game_name}' not found or update command not configured.")
-
-
-
 
 
 async def setup(bot):
