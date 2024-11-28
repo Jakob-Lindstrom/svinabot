@@ -1,3 +1,5 @@
+# cogs/games.py
+
 import discord
 from discord.ext import commands
 from game_servers.base import GameServer
