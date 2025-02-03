@@ -504,8 +504,8 @@ class GameCommands(commands.Cog):
                             update_finished = True
                             final_message_set = True
 
-                    # Check if process has completed without further output
-                    if process.poll() is not None and not final_message_set:
+                    # Check if the update is done
+                    if process.returncode is not None and not final_message_set:
                         await message.edit(content=f"✅ {game.display_name} server update process completed.")
                         update_finished = True
 
